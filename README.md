@@ -13,7 +13,7 @@ perform actions on accounts, the user will have to authorize your application th
 
 Requirements
 ------------
-
+Most of these libraries are currently included in the repo, however, dependencies will eventually be phased out to increase portability.
 - Lua >= 5.2
 - [jf-JSON](http://regex.info/blog/lua/json)
 - [lume](https://github.com/rxi/lume/)
@@ -23,12 +23,12 @@ Requirements
 Imgur API Documentation
 -----------------------
 
-Our developer documentation can be found [here](https://api.imgur.com/).
+Their developer documentation can be found [here](https://api.imgur.com/).
 
 Community
 ---------
 
-The best way to reach out to Imgur for API support would be our
+The best way to reach out to Imgur for API support would be their
 [Google Group](https://groups.google.com/forum/#!forum/imgur), [Twitter](https://twitter.com/imgurapi), or via
  api@imgur.com. However, if it's a lua error you're having, EntranceJew is the guy you're going to want to talk to.
 
@@ -76,7 +76,7 @@ To view client and user credit information, use the `credits` attribute of `Imgu
 * ClientLimit
 * ClientRemaining
 
-For more information about rate-limiting, please see the note in our [docs](http://api.imgur.com/#limits)!
+For more information about rate-limiting, please see the note in their [docs](http://api.imgur.com/#limits)!
 
 Examples
 ------------

@@ -14,7 +14,7 @@ perform actions on accounts, the user will have to authorize your application th
 Requirements
 ------------
 Most of these libraries are currently included in the repo, however, dependencies will eventually be phased out to increase portability.
-- Lua >= 5.2
+- Lua >= 5.1
 - [jf-JSON](http://regex.info/blog/lua/json)
 - [lume](https://github.com/rxi/lume/)
 - [middleclass](https://github.com/kikito/middleclass)

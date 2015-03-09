@@ -479,7 +479,7 @@ function ImgurClient:get_user_galleries()
 			gallery['account_url'],
 			gallery['link'],
 			gallery['tags']
-		)
+		))
 	end
 	return ret
 end
@@ -665,7 +665,8 @@ function ImgurClient:gallery_item_tags(item_id)
 			item['downs'],
 			item['name'],
 			item['author']
-		)
+		))
+	end
 	return ret
 end
 
@@ -838,7 +839,7 @@ function ImgurClient:conversation_list()
 			conversation['with_account_id'],
 			conversation['with_account'],
 			conversation['message_count']
-		)
+		))
 	end
 	return ret
 end

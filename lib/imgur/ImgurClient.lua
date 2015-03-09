@@ -48,7 +48,7 @@ end
 
 function ImgurClient:get_auth_url(response_type)
 	response_type = response_type or 'pin'
-	return '%soauth2/authorize?client_id=%s&response_type=%s' % {API_URL, self.client_id, response_type}
+	return string.format('%soauth2/authorize?client_id=%s&response_type=%s', API_URL, self.client_id, response_type)
 end
 
 function ImgurClient:authorize(response, grant_type)

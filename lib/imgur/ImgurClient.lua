@@ -67,7 +67,7 @@ function ImgurClient:authorize(response, grant_type)
 		assert(false, "Debug, grant type wasn't authorization_code.")
 	end
 	
-	return self.make_request('POST', 'oauth2/token', body, true)
+	return self:make_request('POST', 'oauth2/token', body, true)
 end
 
 function ImgurClient:prepare_headers(force_anon)
@@ -129,7 +129,7 @@ function ImgurClient:make_request(method, route, data, force_anon)
 	local url = API_URL .. string.format('3/%s', route)
 	print(method, route, url)
 	
-	local header = self:prepare_headers()
+	local header = self:prepare_headers(force_anon)
 	
 	local response
 	if lume.find({'delete', 'get'}, method) then
@@ -140,7 +140,7 @@ function ImgurClient:make_request(method, route, data, force_anon)
 	
 	if response.status_code == 403 and self.auth ~= nil then
 		self.auth:refresh()
-		header = self:prepare_headers()
+		header = self:prepare_headers(force_anon)
 		if lume.find({'delete', 'get'}, method) then
 			response = self:method_to_call(method, url, header, data, data)
 		else
@@ -188,8 +188,8 @@ end
 
 -- Account-related endpoints
 function ImgurClient:get_account(username)
-	self.validate_user_context(username)
-	account_data = self.make_request('GET', string.format('account/%s', username))
+	self:validate_user_context(username)
+	local account_data = self:make_request('GET', string.format('account/%s', username))
 
 	return Account(
 		account_data['id'],
@@ -202,30 +202,30 @@ function ImgurClient:get_account(username)
 end
 
 function ImgurClient:get_gallery_favorites(username)
-	self.validate_user_context(username)
-	gallery_favorites = self.make_request('GET', string.format('account/%s/gallery_favorites', username))
+	self:validate_user_context(username)
+	local gallery_favorites = self:make_request('GET', string.format('account/%s/gallery_favorites', username))
 
 	return build_gallery_images_and_albums(gallery_favorites)
 end
 
 function ImgurClient:get_account_favorites(username)
-	self.validate_user_context(username)
-	favorites = self.make_request('GET', string.format('account/%s/favorites', username))
+	self:validate_user_context(username)
+	local favorites = self:make_request('GET', string.format('account/%s/favorites', username))
 
 	return build_gallery_images_and_albums(favorites)
 end
 
 function ImgurClient:get_account_submissions(username, page)
 	page = page or 0
-	self.validate_user_context(username)
-	submissions = self.make_request('GET', string.format('account/%s/submissions/%d', username, page))
+	self:validate_user_context(username)
+	local submissions = self:make_request('GET', string.format('account/%s/submissions/%d', username, page))
 
 	return build_gallery_images_and_albums(submissions)
 end
 
 function ImgurClient:get_account_settings(username)
-	self.logged_in()
-	settings = self.make_request('GET', string.format('account/%s/settings', username))
+	self:logged_in()
+	local settings = self:make_request('GET', string.format('account/%s/settings', username))
 
 	return AccountSettings(
 		settings['email'],
@@ -240,187 +240,211 @@ function ImgurClient:get_account_settings(username)
 	)
 end
 
---[[ 2 complex 3 me
 function ImgurClient:change_account_settings(username, fields)
-	post_data = {setting: fields[setting] for setting in set(self.allowed_account_fields).intersection(fields.keys())}
-	return self.make_request('POST', string.format('account/%s/settings', username), post_data)
+	local post_data = {}
+	for _,setting in ipairs(self.allowed_account_fields) do
+		if fields[setting] then
+			post_data[setting] = fields[setting]
+		end
+	end
+	return self:make_request('POST', string.format('account/%s/settings', username), post_data)
 end
-]]
+
 function ImgurClient:get_email_verification_status(username)
-	self.logged_in()
-	self.validate_user_context(username)
-	return self.make_request('GET', string.format('account/%s/verifyemail', username))
+	self:logged_in()
+	self:validate_user_context(username)
+	return self:make_request('GET', string.format('account/%s/verifyemail', username))
 end
 
 function ImgurClient:send_verification_email(username)
-	self.logged_in()
-	self.validate_user_context(username)
-	return self.make_request('POST', string.format('account/%s/verifyemail', username))
+	self:logged_in()
+	self:validate_user_context(username)
+	return self:make_request('POST', string.format('account/%s/verifyemail', username))
 end
 
---[[ 2 complex 4 me
-function ImgurClient:get_account_albums(username, page=0)
-	self.validate_user_context(username)
+function ImgurClient:get_account_albums(username, page)
+	local page = page or 0
+	self:validate_user_context(username)
 
-	albums = self.make_request('GET', string.format('account/%s/albums/%d', username, page))
-	return [Album(album) for album in albums]
+	local albums = self:make_request('GET', string.format('account/%s/albums/%d', username, page))
+	local ret = {}
+	for _,album in ipairs(albums) do
+		table.insert(ret, Album(album))
+	end
+	return ret
 end
-]]
 
 function ImgurClient:get_account_album_ids(username, page)
 	page = page or 0
-	self.validate_user_context(username)
-	return self.make_request('GET', string.format('account/%s/albums/ids/%d', username, page))
+	self:validate_user_context(username)
+	return self:make_request('GET', string.format('account/%s/albums/ids/%d', username, page))
 end
 
 function ImgurClient:get_account_album_count(username)
-	self.validate_user_context(username)
-	return self.make_request('GET', string.format('account/%s/albums/count', username))
+	self:validate_user_context(username)
+	return self:make_request('GET', string.format('account/%s/albums/count', username))
 end
 
---[[ 2 complex 4 me
 function ImgurClient:get_account_comments(username, sort, page)
 	sort = sort or 'newest'
 	page = page or 0
 	self.validate_user_context(username)
-	comments = self.make_request('GET', string.format('account/%s/comments/%s/%s', username, sort, page))
+	local comments = self:make_request('GET', string.format('account/%s/comments/%s/%s', username, sort, page))
 
-	return [Comment(comment) for comment in comments]
+	local ret = {}
+	for _,comment in ipairs(comments) do
+		table.insert(ret, Comment(comment))
+	end
+	return ret
 end
-]]
 
 function ImgurClient:get_account_comment_ids(username, sort, page)
 	sort = sort or 'newest'
 	page = page or 0
-	self.validate_user_context(username)
-	return self.make_request('GET', string.format('account/%s/comments/ids/%s/%s', username, sort, page))
+	self:validate_user_context(username)
+	return self:make_request('GET', string.format('account/%s/comments/ids/%s/%s', username, sort, page))
 end
 
 function ImgurClient:get_account_comment_count(username)
-	self.validate_user_context(username)
-	return self.make_request('GET', string.format('account/%s/comments/count', username))
+	self:validate_user_context(username)
+	return self:make_request('GET', string.format('account/%s/comments/count', username))
 end
 
---[[ 2 complex 4 me
 function ImgurClient:get_account_images(username, page)
 	page = page or 0
 	self.validate_user_context(username)
-	images = self.make_request('GET', string.format('account/%s/images/%d', username, page))
-
-	return [Image(image) for image in images]
+	local images = self:make_request('GET', string.format('account/%s/images/%d', username, page))
+	local ret = {}
+	for _,image in ipairs(images) do
+		table.insert(ret, Image(image))
+	end
+	return ret
 end
-]]
 
 function ImgurClient:get_account_image_ids(username, page)
 	page = page or 0
-	self.validate_user_context(username)
-	return self.make_request('GET', string.format('account/%s/images/ids/%d', username, page))
+	self:validate_user_context(username)
+	return self:make_request('GET', string.format('account/%s/images/ids/%d', username, page))
 end
 
 function ImgurClient:get_account_images_count(username)
-	self.validate_user_context(username)
-	return self.make_request('GET', string.format('account/%s/images/count', username))
+	self:validate_user_context(username)
+	return self:make_request('GET', string.format('account/%s/images/count', username))
 end
 
 -- Album-related endpoints
 function ImgurClient:get_album(album_id)
-	album = self.make_request('GET', string.format('album/%s', album_id))
+	local album = self:make_request('GET', string.format('album/%s', album_id))
 	return Album(album)
 end
 
---[[ 2 complex 4 me
 function ImgurClient:get_album_images(album_id)
-	images = self.make_request('GET', string.format('album/%s/images', album_id))
-	return [Image(image) for image in images]
+	local images = self:make_request('GET', string.format('album/%s/images', album_id))
+	local ret = {}
+	for _,image in ipairs(images) do
+		table.insert(ret, Image(image))
+	end
+	return ret
 end
-]]
 
---[[ 2 complex 4 me
 function ImgurClient:create_album(fields)
-	post_data = {field: fields[field] for field in set(self.allowed_album_fields).intersection(fields.keys())}
+	local post_data = {}
+	for _,field in ipairs(self.allowed_album_fields) do
+		if fields[field] then
+			post_data[field] = fields[field]
+		end
+	end
 
-	if 'ids' in post_data:
-	self.logged_in()
+	if post_data['ids'] then
+		self:logged_in()
+	end
 
-	return self.make_request('POST', 'album', data=post_data)
+	return self:make_request('POST', 'album', post_data)
 end
-]]
 
---[[ 2 complex 4 me
 function ImgurClient:update_album(album_id, fields)
-	post_data = {field: fields[field] for field in set(self.allowed_album_fields).intersection(fields.keys())}
+	local post_data = {}
+	for _,field in ipairs(self.allowed_album_fields) do
+		if fields[field] then
+			post_data[field] = fields[field]
+		end
+	end
 
-	if isinstance(post_data['ids'], list):
-	post_data['ids'] = ','.join(post_data['ids'])
+	if type(post_data['ids'])=="table" then
+		post_data['ids'] = table.concat(post_data['ids'], ",")
+	end
 
-	return self.make_request('POST', string.format('album/%s', album_id), data=post_data)
+	return self:make_request('POST', string.format('album/%s', album_id), post_data)
 end
-]]
 
 function ImgurClient:album_delete(album_id)
-	return self.make_request('DELETE', string.format('album/%s',album_id))
+	return self:make_request('DELETE', string.format('album/%s',album_id))
 end
+
 function ImgurClient:album_favorite(album_id)
-	self.logged_in()
-	return self.make_request('POST', string.format('album/%s/favorite', album_id))
+	self:logged_in()
+	return self:make_request('POST', string.format('album/%s/favorite', album_id))
 end
+
 function ImgurClient:album_set_images(album_id, ids)
-	if isinstance(ids, list) then
+	if type(ids)=="table" then
 		ids = table.concat(ids, ",")
 	end
 
-	return self.make_request('POST', string.format('album/%s/',album_id), {ids = ids})
+	return self:make_request('POST', string.format('album/%s/',album_id), {ids = ids})
 end
+
 function ImgurClient:album_add_images(album_id, ids)
-	if isinstance(ids, list) then
+	if type(ids)=="table" then
 		ids = table.concat(ids, ",")
 	end
 
-	return self.make_request('POST', string.format('album/%s/add', album_id), {ids = ids})
+	return self:make_request('POST', string.format('album/%s/add', album_id), {ids = ids})
 end
+
 function ImgurClient:album_remove_images(album_id, ids)
-	if isinstance(ids, list) then
+	if type(ids)=="table" then
 		ids = table.concat(ids, ",")
 	end
 
-	return self.make_request('DELETE', string.format('album/%s/remove_images', album_id), {ids = ids})
+	return self:make_request('DELETE', string.format('album/%s/remove_images', album_id), {ids = ids})
 end
 
 -- Comment-related endpoints
 function ImgurClient:get_comment(comment_id)
-	comment = self.make_request('GET', string.format('comment/%d',comment_id))
+	local comment = self:make_request('GET', string.format('comment/%d', comment_id))
 	return Comment(comment)
 end
 
 function ImgurClient:delete_comment(comment_id)
-	self.logged_in()
-	return self.make_request('DELETE', string.format('comment/%d',comment_id))
+	self:logged_in()
+	return self:make_request('DELETE', string.format('comment/%d', comment_id))
 end
 
 function ImgurClient:get_comment_replies(comment_id)
-	replies = self.make_request('GET', string.format('comment/%d/replies',comment_id))
+	local replies = self:make_request('GET', string.format('comment/%d/replies', comment_id))
 	return format_comment_tree(replies)
 end
 
 function ImgurClient:post_comment_reply(comment_id, image_id, comment)
-	self.logged_in()
-	data = {
+	self:logged_in()
+	local data = {
 		image_id = image_id,
 		comment = comment
 	}
 
-	return self.make_request('POST', string.format('comment/%d',comment_id), data)
+	return self:make_request('POST', string.format('comment/%d',comment_id), data)
 end
 
 function ImgurClient:comment_vote(comment_id, vote)
 	vote = vote or 'up'
-	self.logged_in()
-	return self.make_request('POST', string.format('comment/%d/vote/%s',comment_id, vote))
+	self:logged_in()
+	return self:make_request('POST', string.format('comment/%d/vote/%s', comment_id, vote))
 end
 
 function ImgurClient:comment_report(comment_id)
-	self.logged_in()
-	return self.make_request('POST', 'comment/%d/report' % {comment_id})
+	self:logged_in()
+	return self:make_request('POST', string.format('comment/%d/report', comment_id))
 end
 
 -- Custom Gallery Endpoints
@@ -429,7 +453,7 @@ function ImgurClient:get_custom_gallery(gallery_id, sort, window, page)
 	window = window or 'week'
 	page = page or 0
 	
-	gallery = self.make_request('GET', 'g/%s/%s/%s/%s' % {gallery_id, sort, window, page})
+	local gallery = self:make_request('GET', string.format('g/%s/%s/%s/%s', gallery_id, sort, window, page))
 	return CustomGallery(
 		gallery['id'],
 		gallery['name'],
@@ -441,31 +465,35 @@ function ImgurClient:get_custom_gallery(gallery_id, sort, window, page)
 		gallery['items']
 	)
 end
---[[ 2 complex 4 me
-function ImgurClient:get_user_galleries()
-	self.logged_in()
-	galleries = self.make_request('GET', 'g')
 
-	return [CustomGallery(
-		gallery['id'],
-		gallery['name'],
-		gallery['datetime'],
-		gallery['account_url'],
-		gallery['link'],
-		gallery['tags']
-		) for gallery in galleries]
+function ImgurClient:get_user_galleries()
+	self:logged_in()
+	local galleries = self:make_request('GET', 'g')
+	local ret = {}
+
+	for _,gallery in ipairs(galleries) do
+		table.insert(ret, CustomGallery(
+			gallery['id'],
+			gallery['name'],
+			gallery['datetime'],
+			gallery['account_url'],
+			gallery['link'],
+			gallery['tags']
+		)
+	end
+	return ret
 end
-]]
+
 function ImgurClient:create_custom_gallery(name, tags)
 	tags = tags or nil
-	self.logged_in()
-	data = {name = name}
+	self:logged_in()
+	local data = {name = name}
 
 	if tags then
 		data['tags'] = table.concat(tags, ',')
 	end
 
-	gallery = self.make_request('POST', 'g', data)
+	local gallery = self:make_request('POST', 'g', data)
 
 	return CustomGallery(
 		gallery['id'],
@@ -478,13 +506,13 @@ function ImgurClient:create_custom_gallery(name, tags)
 end
 
 function ImgurClient:custom_gallery_update(gallery_id, name)
-	self.logged_in()
-	data = {
+	self:logged_in()
+	local data = {
 		id = gallery_id,
 		name = name
 	}
 
-	gallery = self.make_request('POST', 'g/%s' % {gallery_id}, data)
+	local gallery = self.make_request('POST', string.format('g/%s', gallery_id), data)
 
 	return CustomGallery(
 		gallery['id'],
@@ -497,7 +525,7 @@ function ImgurClient:custom_gallery_update(gallery_id, name)
 end
 
 function ImgurClient:custom_gallery_add_tags(gallery_id, tags)
-	self.logged_in()
+	self:logged_in()
 
 	if tags then
 		data = {tags = table.concat(tags, ',')}
@@ -505,11 +533,11 @@ function ImgurClient:custom_gallery_add_tags(gallery_id, tags)
 		assert(false, "ImgurClientError: tags must not be empty!")
 	end
 
-	return self.make_request('PUT', 'g/%s/add_tags' % {gallery_id}, data)
+	return self:make_request('PUT', string.format('g/%s/add_tags', gallery_id), data)
 end
 
 function ImgurClient:custom_gallery_remove_tags(gallery_id, tags)
-	self.logged_in()
+	self:logged_in()
 
 	if tags then
 		data = {tags = table.concat(tags, ',')}
@@ -517,27 +545,27 @@ function ImgurClient:custom_gallery_remove_tags(gallery_id, tags)
 		assert(false, "ImgurClientError: tags must not be empty!")
 	end
 
-	return self.make_request('DELETE', 'g/%s/remove_tags' % {gallery_id}, data)
+	return self:make_request('DELETE', string.format('g/%s/remove_tags', gallery_id), data)
 end
 
 function ImgurClient:custom_gallery_delete(gallery_id)
-	self.logged_in()
-	return self.make_request('DELETE', 'g/%s' % {gallery_id})
+	self:logged_in()
+	return self:make_request('DELETE', string.format('g/%s', gallery_id))
 end
 
 function ImgurClient:filtered_out_tags()
-	self.logged_in()
-	return self.make_request('GET', 'g/filtered_out')
+	self:logged_in()
+	return self:make_request('GET', 'g/filtered_out')
 end
 
 function ImgurClient:block_tag(tag)
-	self.logged_in()
-	return self.make_request('POST', 'g/block_tag', {tag = tag})
+	self:logged_in()
+	return self:make_request('POST', 'g/block_tag', {tag = tag})
 end
 
 function ImgurClient:unblock_tag(tag)
-	self.logged_in()
-	return self.make_request('POST', 'g/unblock_tag', {tag = tag})
+	self:logged_in()
+	return self:make_request('POST', 'g/unblock_tag', {tag = tag})
 end
 
 -- Gallery-related endpoints
@@ -566,17 +594,18 @@ function ImgurClient:memes_subgallery(sort, page, window)
 	page = page or 0
 	window = window or 'week'
 	
+	local response
 	if sort == 'top' then
-		response = self.make_request('GET', 'g/memes/%s/%s/%d' % {sort, window, page})
+		response = self:make_request('GET', string.format('g/memes/%s/%s/%d', sort, window, page))
 	else
-		response = self.make_request('GET', 'g/memes/%s/%d' % {sort, page})
+		response = self:make_request('GET', string.format('g/memes/%s/%d', sort, page))
 	end
 
 	return build_gallery_images_and_albums(response)
 end
 
 function ImgurClient:memes_subgallery_image(item_id)
-	item = self.make_request('GET', 'g/memes/%s' % {item_id})
+	local item = self:make_request('GET', string.format('g/memes/%s', item_id))
 	return build_gallery_images_and_albums(item)
 end
 
@@ -585,17 +614,18 @@ function ImgurClient:subreddit_gallery(subreddit, sort, window, page)
 	window = window or 'week'
 	page = page or 0
 	
+	local response
 	if sort == 'top' then
-		response = self.make_request('GET', 'gallery/r/%s/%s/%s/%d' % {subreddit, sort, window, page})
+		response = self:make_request('GET', string.format('gallery/r/%s/%s/%s/%d', subreddit, sort, window, page))
 	else
-		response = self.make_request('GET', 'gallery/r/%s/%s/%d' % {subreddit, sort, page})
+		response = self:make_request('GET', string.format('gallery/r/%s/%s/%d', subreddit, sort, page))
 	end
 
 	return build_gallery_images_and_albums(response)
 end
 
 function ImgurClient:subreddit_image(subreddit, image_id)
-	item = self.make_request('GET', 'gallery/r/%s/%s' % {subreddit, image_id})
+	local item = self:make_request('GET', string.format('gallery/r/%s/%s', subreddit, image_id))
 	return build_gallery_images_and_albums(item)
 end
 
@@ -604,10 +634,11 @@ function ImgurClient:gallery_tag(tag, sort, page, window)
 	page = page or 0
 	window = window or 'week'
 	
+	local response
 	if sort == 'top' then
-		response = self.make_request('GET', 'gallery/t/%s/%s/%s/%d' % {tag, sort, window, page})
+		response = self:make_request('GET', string.format('gallery/t/%s/%s/%s/%d', tag, sort, window, page))
 	else
-		response = self.make_request('GET', 'gallery/t/%s/%s/%d' % {tag, sort, page})
+		response = self:make_request('GET', string.format('gallery/t/%s/%s/%d', tag, sort, page))
 	end
 
 	return Tag(
@@ -620,103 +651,112 @@ function ImgurClient:gallery_tag(tag, sort, page, window)
 end
 
 function ImgurClient:gallery_tag_image(tag, item_id)
-	item = self.make_request('GET', 'gallery/t/%s/%s' % {tag, item_id})
+	local item = self:make_request('GET', string.format('gallery/t/%s/%s', tag, item_id))
 	return build_gallery_images_and_albums(item)
 end
 
---[[ 2 complex 4 me
 function ImgurClient:gallery_item_tags(item_id)
-	response = self.make_request('GET', 'gallery/%s/tags' % {item_id})
-
-	return [TagVote(
-		item['ups'],
-		item['downs'],
-		item['name'],
-		item['author']
-		) for item in response['tags']]
---end
---]]
+	local response = self:make_request('GET', string.format('gallery/%s/tags', item_id))
+	local ret = {}
+	
+	for _,item in ipairs(response['tags']) do
+		table.insert(ret, TagVote(
+			item['ups'],
+			item['downs'],
+			item['name'],
+			item['author']
+		)
+	return ret
+end
 
 
 function ImgurClient:gallery_tag_vote(item_id, tag, vote)
-	self.logged_in()
-	response = self.make_request('POST', 'gallery/%s/vote/tag/%s/%s' % {item_id, tag, vote})
+	self:logged_in()
+	local response = self:make_request('POST', string.format('gallery/%s/vote/tag/%s/%s', item_id, tag, vote))
 	return response
 end
 
---[[ 2 complex 4 me
-function ImgurClient:gallery_search(q, advanced=None, sort='time', window='all', page=0)
-	if advanced:
-	data = {field: advanced[field]
-		for field in set(self.allowed_advanced_search_fields).intersection(advanced.keys())}
-else:
-	data = {'q': q}
+function ImgurClient:gallery_search(q, advanced, sort, window, page)
+	advanced = advanced or nil
+	sort = sort or 'time'
+	window = window or 'all'
+	page = page or 0
+	
+	local data = {}
+	if advanced then
+		for _,field in ipairs(self.allowed_advanced_search_fields) do
+			if advanced[field] then
+				data[field] = advanced[field]
+			end
+		end
+	else
+		data = {q = q}
+	end
 
-	response = self.make_request('GET', 'gallery/search/%s/%s/%s' % (sort, window, page), data)
+	local response = self:make_request('GET', string.format('gallery/search/%s/%s/%s', sort, window, page), data)
 	return build_gallery_images_and_albums(response)
 end
-]]
 
 function ImgurClient:gallery_random(page)
 	page = page or 0
-	response = self.make_request('GET', 'gallery/random/random/%d' % {page})
+	local response = self.make_request('GET', string.format('gallery/random/random/%d', page))
 	return build_gallery_images_and_albums(response)
 end
 
 function ImgurClient:share_on_imgur(item_id, title, terms)
 	terms = terms or 0
-	self.logged_in()
-	data = {
+	self:logged_in()
+	local data = {
 		title = title,
 		terms = terms
 	}
 
-	return self.make_request('POST', 'gallery/%s' % {item_id}, data)
+	return self:make_request('POST', string.format('gallery/%s', item_id), data)
 end
 
 function ImgurClient:remove_from_gallery(item_id)
-	self.logged_in()
-	return self.make_request('DELETE', 'gallery/%s' % {item_id})
+	self:logged_in()
+	return self:make_request('DELETE', string.format('gallery/%s', item_id))
 end
 
 function ImgurClient:gallery_item(item_id)
-	response = self.make_request('GET', 'gallery/%s' % {item_id})
+	local response = self.make_request('GET', string.format('gallery/%s', item_id))
 	return build_gallery_images_and_albums(response)
 end
 
 function ImgurClient:report_gallery_item(item_id)
-	self.logged_in()
-	return self.make_request('POST', 'gallery/%s/report' % {item_id})
+	self:logged_in()
+	return self:make_request('POST', string.format('gallery/%s/report', item_id))
 end
 
 function ImgurClient:gallery_item_vote(item_id, vote)
 	vote = vote or 'up'
-	self.logged_in()
-	return self.make_request('POST', 'gallery/%s/vote/%s' % {item_id, vote})
+	self:logged_in()
+	return self:make_request('POST', string.format('gallery/%s/vote/%s', item_id, vote))
 end
 
 function ImgurClient:gallery_item_comments(item_id, sort)
 	sort = sort or 'best'
-	response = self.make_request('GET', 'gallery/%s/comments/%s' % {item_id, sort})
+	local response = self:make_request('GET', string.format('gallery/%s/comments/%s', item_id, sort))
 	return format_comment_tree(response)
 end
 
 function ImgurClient:gallery_comment(item_id, comment)
-	self.logged_in()
-	return self.make_request('POST', 'gallery/%s/comment' % {item_id}, {comment = comment})
+	self:logged_in()
+	return self:make_request('POST', string.format('gallery/%s/comment', item_id), {comment = comment})
 end
 
 function ImgurClient:gallery_comment_ids(item_id)
-	return self.make_request('GET', 'gallery/%s/comments/ids' % {item_id})
+	return self:make_request('GET', string.format('gallery/%s/comments/ids', item_id))
 end
 
 function ImgurClient:gallery_comment_count(item_id)
-	return self.make_request('GET', 'gallery/%s/comments/count' % {item_id})
+	return self:make_request('GET', string.format('gallery/%s/comments/count', item_id))
 end
 
 -- Image-related endpoints
 function ImgurClient:get_image(image_id)
-	image = self.make_request('GET', 'image/%s' % {image_id})
+	local image = self:make_request('GET', string.format('image/%s', image_id))
 	return Image(image)
 end
 
@@ -725,75 +765,90 @@ function ImgurClient:upload_from_path(path, config, anon)
 	anon = anon or true
 	
 	if not config then
-		config = dict()
+		config = {}
 	end
 
-	fd = io.open(path, 'rb')
-	contents = fd:read("*all")
-	b64 = base64.b64encode(contents)
+	local fd = io.open(path, 'rb')
+	local contents = fd:read("*all")
+	local b64 = base64.b64encode(contents)
 	fd:close()
 
-	data = {
+	local data = {
 		image = b64,
 		type = 'base64',
 	}
 	
-	--[[ 2 complex 4 me
-	data.update({meta: config[meta] for meta in set(self.allowed_image_fields).intersection(config.keys())})
-	]]
-	return self.make_request('POST', 'upload', data, anon)
+	local newdict = {}
+	for _,meta in ipairs(self.allowed_allowed_image_fields) do
+		if config[meta] then
+			table.insert(newdict, config[meta])
+		end
+	end
+	data.meta = newdict
+	
+	--[[ 2 complex 4 me: original ]]
+	--data.update({meta: config[meta] for meta in set(self.allowed_image_fields).intersection(config.keys())})
+	return self:make_request('POST', 'upload', data, anon)
 end
 
 function ImgurClient:upload_from_url(url, config, anon)
 	config = config or nil
 	anon = anon or true
 	if not config then
-		config = dict()
+		config = {}
 	end
 
-	data = {
+	local data = {
 		image = url,
 		type = 'url',
 	}
 
-	--[[ 2 complex 4 me
-	data.update({meta: config[meta] for meta in set(self.allowed_image_fields).intersection(config.keys())})
-	]]
-	return self.make_request('POST', 'upload', data, anon)
+	local newdict = {}
+	for _,meta in ipairs(self.allowed_allowed_image_fields) do
+		if config[meta] then
+			table.insert(newdict, config[meta])
+		end
+	end
+	data.meta = newdict
+	--[[ 2 complex 4 me: original ]]
+	--data.update({meta: config[meta] for meta in set(self.allowed_image_fields).intersection(config.keys())})
+	return self:make_request('POST', 'upload', data, anon)
 end
 
 function ImgurClient:delete_image(image_id)
-	return self.make_request('DELETE', 'image/%s' % {image_id})
+	return self:make_request('DELETE', string.format('image/%s', image_id))
 end
 
 function ImgurClient:favorite_image(image_id)
-	self.logged_in()
-	return self.make_request('POST', 'image/%s/favorite' % {image_id})
+	self:logged_in()
+	return self:make_request('POST', string.format('image/%s/favorite', image_id))
 end
 
 -- Conversation-related endpoints
---[[ 2 complex 4 me
 function ImgurClient:conversation_list()
-	self.logged_in()
+	self:logged_in()
 
-	conversations = self.make_request('GET', 'conversations')
-	return [Conversation(
-		conversation['id'],
-		conversation['last_message_preview'],
-		conversation['datetime'],
-		conversation['with_account_id'],
-		conversation['with_account'],
-		conversation['message_count'],
-		) for conversation in conversations]
+	local conversations = self:make_request('GET', 'conversations')
+	local ret = {}
+	for _,conversation in ipairs(conversations) do
+		table.insert(ret, Conversation(
+			conversation['id'],
+			conversation['last_message_preview'],
+			conversation['datetime'],
+			conversation['with_account_id'],
+			conversation['with_account'],
+			conversation['message_count']
+		)
+	end
+	return ret
 end
-]]
 
 function ImgurClient:get_conversation(conversation_id, page, offset)
 	page = page or 1
 	offset = offset or 0
-	self.logged_in()
+	self:logged_in()
 
-	conversation = self.make_request('GET', 'conversations/%d/%d/%d' % {conversation_id, page, offset})
+	local conversation = self:make_request('GET', string.format('conversations/%d/%d/%d', conversation_id, page, offset))
 	return Conversation(
 		conversation['id'],
 		conversation['last_message_preview'],
@@ -808,48 +863,50 @@ function ImgurClient:get_conversation(conversation_id, page, offset)
 end
 
 function ImgurClient:create_message(recipient, body)
-	self.logged_in()
-	return self.make_request('POST', 'conversations/%s' % {recipient}, {body = body})
+	self:logged_in()
+	return self:make_request('POST', string.format('conversations/%s', recipient), {body = body})
 end
 
 function ImgurClient:delete_conversation(conversation_id)
-	self.logged_in()
-	return self.make_request('DELETE', 'conversations/%d' % {conversation_id})
+	self:logged_in()
+	return self:make_request('DELETE', string.format('conversations/%d', conversation_id))
 end
 
 function ImgurClient:report_sender(username)
-	self.logged_in()
-	return self.make_request('POST', 'conversations/report/%s' % {username})
+	self:logged_in()
+	return self:make_request('POST', string.format('conversations/report/%s', username))
 end
 
 function ImgurClient:block_sender(username)
-	self.logged_in()
-	return self.make_request('POST', 'conversations/block/%s' % {username})
+	self:logged_in()
+	return self:make_request('POST', string.format('conversations/block/%s', username))
 end
 
 -- Notification-related endpoints
 function ImgurClient:get_notifications(new)
 	new = new or true
-	self.logged_in()
-	response = self.make_request('GET', 'notification', {new = string.lower(new)})
+	self:logged_in()
+	local response = self:make_request('GET', 'notification', {new = string.lower(new)})
 	return build_notifications(response)
 end
 
 function ImgurClient:get_notification(notification_id)
-	self.logged_in()
-	response = self.make_request('GET', 'notification/%d' % {notification_id})
+	self:logged_in()
+	local response = self:make_request('GET', string.format('notification/%d', notification_id))
 	return build_notification(response)
 end
 
 function ImgurClient:mark_notifications_as_read(notification_ids)
-	self.logged_in()
+	self:logged_in()
 	return self.make_request('POST', 'notification', table.concat(notification_ids, ','))
 end
 
 -- Memegen-related endpoints
---[[ 2 complex 4 me
 function ImgurClient:default_memes()
-	response = self.make_request('GET', 'memegen/defaults')
-	return [Image(meme) for meme in response]
+	local response = self:make_request('GET', 'memegen/defaults')
+	local ret = {}
+	for _,meme in ipairs(response) do
+		table.insert(ret, Image(meme))
+	end
+	return ret
 end
-]]

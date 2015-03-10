@@ -594,7 +594,7 @@ function ImgurClient:gallery(section, sort, page, window, show_viral)
 	sort = sort or 'viral'
 	page = 0
 	window = 'day'
-	show_viral = show_viral or true
+	show_viral = show_viral or (show_viral == nil)
 	local response
 	if section == 'top' then
 		response = self:make_request('GET', 
@@ -783,7 +783,7 @@ end
 
 function ImgurClient:upload_from_path(path, config, anon)
 	config = config or nil
-	anon = anon or true
+	anon = anon or (anon == nil)
 	
 	if not config then
 		config = {}
@@ -797,22 +797,20 @@ function ImgurClient:upload_from_path(path, config, anon)
 		type = 'base64',
 	}
 	
-	local newdict = {}
-	for _,meta in ipairs(self.allowed_allowed_image_fields) do
+	for _,meta in ipairs(self.allowed_image_fields) do
 		if config[meta] then
-			table.insert(newdict, config[meta])
+			data[meta] = config[meta]
 		end
 	end
-	data.meta = newdict
-	
-	--[[ 2 complex 4 me: original ]]
-	--data.update({meta: config[meta] for meta in set(self.allowed_image_fields).intersection(config.keys())})
-	return self:make_request('POST', 'upload', data, anon)
+	print_r({path=path, config=config, anon=anon})
+	local req = self:make_request('POST', 'upload', data, anon)
+	print_r(req)
+	return req
 end
 
 function ImgurClient:upload_from_url(url, config, anon)
 	config = config or nil
-	anon = anon or true
+	anon = anon or (anon == nil)
 	if not config then
 		config = {}
 	end
@@ -822,15 +820,12 @@ function ImgurClient:upload_from_url(url, config, anon)
 		type = 'url',
 	}
 
-	local newdict = {}
-	for _,meta in ipairs(self.allowed_allowed_image_fields) do
+	for _,meta in ipairs(self.allowed_image_fields) do
 		if config[meta] then
-			table.insert(newdict, config[meta])
+			data[meta] = config[meta]
 		end
 	end
-	data.meta = newdict
-	--[[ 2 complex 4 me: original ]]
-	--data.update({meta: config[meta] for meta in set(self.allowed_image_fields).intersection(config.keys())})
+	
 	return self:make_request('POST', 'upload', data, anon)
 end
 
@@ -903,7 +898,7 @@ end
 
 -- Notification-related endpoints
 function ImgurClient:get_notifications(new)
-	new = new or true
+	new = new or (new == nil)
 	self:logged_in()
 	local response = self:make_request('GET', 'notification', {new = string.lower(new)})
 	return build_notifications(response)

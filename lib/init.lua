@@ -3,10 +3,25 @@ require(path .. ".vendor.strap")
 lume = require(path .. ".vendor.lume")
 class = require(path .. ".vendor.middleclass")
 JSON = require(path .. ".vendor.JSON")
+mime = require("mime")
 require(path .. ".vendor.ssl")
 require(path .. ".vendor.https")
 https = require("ssl.https")
 ltn12 = require("ltn12")
+
+-- love handler for convenience
+ioreader = function(path)
+	return love.filesystem.read(path)
+end
+
+--[[ pure lua implementation
+ioreader = function(path)
+	local fd = io.open(path, 'rb')
+	local content = fd:read("*all")
+	fd:close()
+	return content
+end
+]]
 
 API_URL = 'https://api.imgur.com/'
 

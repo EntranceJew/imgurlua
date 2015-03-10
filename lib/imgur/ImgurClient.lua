@@ -769,10 +769,8 @@ function ImgurClient:upload_from_path(path, config, anon)
 		config = {}
 	end
 
-	local fd = io.open(path, 'rb')
-	local contents = fd:read("*all")
-	local b64 = base64.b64encode(contents)
-	fd:close()
+	local contents = ioreader(path)
+	local b64 = mime.b64(contents)
 
 	local data = {
 		image = b64,

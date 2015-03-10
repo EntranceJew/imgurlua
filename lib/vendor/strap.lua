@@ -47,3 +47,28 @@ function print_r ( t )
 	end
 	print()
 end
+
+-- source: http://hg.prosody.im/trunk/file/0ed617f58404/net/http.lua#l31
+local function _formencodepart(s)
+	return s and (s:gsub("%W", function (c)
+		if c ~= " " then
+			return string.format("%%%02x", c:byte());
+		else
+			return "+";
+		end
+	end));
+end
+
+function formencode(form)
+	local result = {};
+	if form[1] then -- Array of ordered { name, value }
+		for _, field in ipairs(form) do
+			table.insert(result, _formencodepart(field.name).."=".._formencodepart(field.value));
+		end
+	else -- Unordered map of name -> value
+		for name, value in pairs(form) do
+			table.insert(result, _formencodepart(name).."=".._formencodepart(value));
+		end
+	end
+	return table.concat(result, "&");
+end

@@ -5,7 +5,7 @@ class = require(path .. ".vendor.middleclass")
 JSON = require(path .. ".vendor.JSON")
 mime = require("mime")
 require(path .. ".vendor.ssl")
-require(path .. ".vendor.https")
+require(path .. ".vendor.ssl.https")
 https = require("ssl.https")
 ltn12 = require("ltn12")
 

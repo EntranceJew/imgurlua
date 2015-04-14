@@ -11,6 +11,10 @@ You must [register](http://api.imgur.com/oauth2/addclient) your client with the 
 make *any* request to the API (see the [Authentication](https://api.imgur.com/#authentication) note). If you want to
 perform actions on accounts, the user will have to authorize your application through OAuth2.
 
+Example
+-------
+See [imgurlua-example](https://github.com/EntranceJew/imgurlua-example) for an example implementation.
+
 Requirements
 ------------
 Most of these libraries are currently included in the repo, however, dependencies will eventually be phased out to increase portability.

@@ -89,41 +89,21 @@ function ImgurClient:method_to_call(method, url, headers, params, data)
 	--params are turned into url parameters
 	--data is the post body
 	--@TODO: integrate params into querystring
-	local t = {}
-	local reqbody = data
-	local uparams = ""
-	if params ~= nil and type(params) == "table" then
-		uparams = formencode(params)
-	end
-	
-	if string.find(url, "?") then
-		url = url .. "&" .. uparams
-	else
-		url = url .. "?" .. uparams
-	end
-	
-	local request = {
-		sink = ltn12.sink.table(t),
-		url = url,
+
+	local req = {
+		data = data,
 		method = string.upper(method),
 		headers = headers
 	}
 	
-	if reqbody ~= nil then
-		reqbody = formencode(reqbody)
-		request.source = ltn12.source.string(reqbody)
-		request.headers["content-length"] = string.len(reqbody)
-		request.headers["content-type"] = "application/x-www-form-urlencoded"
+	local response, code, desc = request.send(url, req)
+	if code then
+		assert(code ~= nil, "ERROR PROCESSING HTTP REQUEST? "..code.." & "..desc)
 	end
 	
-	local res, code, nheaders, status = https.request(request)
-	return {
-		res = res,
-		status_code = code,
-		headers = nheaders,
-		status = status,
-		json = JSON:decode(table.concat(t))
-	}
+	response.json = JSON:decode(response.body)
+	
+	return response
 end
 
 --[[
@@ -148,14 +128,15 @@ function ImgurClient:make_request(method, route, data, force_anon)
 	
 	local response
 	if lume.find({'delete', 'get'}, method) then
-		print("DEBUG: inside meth1")
+		--print("DEBUG: inside meth1")
 		response = self:method_to_call(method, url, header, data, data)
 	else
-		print("DEBUG: inside meth2")
+		--print("DEBUG: inside meth2")
 		response = self:method_to_call(method, url, header, nil, data) --not supposed to have params supplied
+		--print_r({response=response, yukka=yukka, zukka=zukka})
 	end
 	
-	if response.status_code == 403 and self.auth ~= nil then
+	if response.code == 403 and self.auth ~= nil then
 		print("DEBUG: need to refresh")
 		self.auth:refresh()
 		header = self:prepare_headers(force_anon)
@@ -177,7 +158,7 @@ function ImgurClient:make_request(method, route, data, force_anon)
 	}
 
 	-- Rate-limit check
-	if response.status_code == 429 then
+	if response.code == 429 then
 		assert(false, "ImgurClientRateLimitError: No more posts allowed.")
 	end
 
@@ -189,7 +170,7 @@ function ImgurClient:make_request(method, route, data, force_anon)
 		type(response.json['data']) == 'table' and
 		lume.find(response.json['data'], 'error')
 		then
-		assert(false, "ImgurClientError: "..response.json['data']['error'] .. "\t" .. response.status_code)
+		assert(false, "ImgurClientError: "..response.json['data']['error'] .. "\t" .. response.code)
 	end
 	if response.json.data then
 		return response.json.data

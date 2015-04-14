@@ -18,41 +18,30 @@ end
 
 function AuthWrapper:refresh()
 	local data = {
-		refresh_token = self.refresh_token,
-		client_id = self.client_id,
-		client_secret = self.client_secret,
-		grant_type = 'refresh_token'
+		method = 'POST',
+		data = {
+			refresh_token = self.refresh_token,
+			client_id = self.client_id,
+			client_secret = self.client_secret,
+			grant_type = 'refresh_token',
+		}
 	}
 
 	local url = API_URL + 'oauth2/token'
 	
-	local response = self:post()
+	local response, code, desc = request.send(url, data)
+	print(response)
+	print(code)
+	print(desc)
+	
+	if response then
+		assert(response.code ~= 200, "Error refreshing accss token!\t"..response.code)
+	elseif code then
+		assert(code ~= 200, "Error refreshing accss token!\t"..code)
+	end
 
-	assert(response.status_code ~= 200, "Error refreshing accss token!\t"..response.status_code)
+	local json = JSON:decode(response.body)
 
-	self.current_access_token = response.json['access_token']
+	self.current_access_token = json['access_token']
 end
 
-function AuthWrapper:post()
-	local response = requests.post(url, data)
-	local t = {}
-	local reqbody = data
-	
-	--[[headers = lume.merge(headers, {
-		["content-length"] = string.len(reqbody),
-		["content-type"] = "multipart/form-data"
-	})]]
-	
-	local body, status_code, retheaders = https.request({
-		url = url,
-		sink = ltn12.sink.table(t),
-		source = ltn12.source.string(reqbody),
-		method = 'POST',
-		--headers = headers
-	})
-	return {body = body,
-		status_code = status_code,
-		headers = retheaders,
-		json = JSON:decode(table.concat(t))
-	}
-end

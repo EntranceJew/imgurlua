@@ -18,7 +18,7 @@ Most of these libraries are currently included in the repo, however, dependencie
 - [jf-JSON](http://regex.info/blog/lua/json)
 - [lume](https://github.com/rxi/lume/)
 - [middleclass](https://github.com/kikito/middleclass)
-- [LuaSec](http://love2d.org/forums/viewtopic.php?f=5&t=76728)
+- [luajit-request](https://github.com/LPGhatguy/luajit-request)
 
 Imgur API Documentation
 -----------------------

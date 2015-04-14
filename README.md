@@ -11,6 +11,10 @@ You must [register](http://api.imgur.com/oauth2/addclient) your client with the 
 make *any* request to the API (see the [Authentication](https://api.imgur.com/#authentication) note). If you want to
 perform actions on accounts, the user will have to authorize your application through OAuth2.
 
+Example
+-------
+See [imgurlua-example](https://github.com/EntranceJew/imgurlua-example) for an example implementation.
+
 Requirements
 ------------
 Most of these libraries are currently included in the repo, however, dependencies will eventually be phased out to increase portability.
@@ -18,7 +22,7 @@ Most of these libraries are currently included in the repo, however, dependencie
 - [jf-JSON](http://regex.info/blog/lua/json)
 - [lume](https://github.com/rxi/lume/)
 - [middleclass](https://github.com/kikito/middleclass)
-- [LuaSec](http://love2d.org/forums/viewtopic.php?f=5&t=76728)
+- [luajit-request](https://github.com/LPGhatguy/luajit-request)
 
 Imgur API Documentation
 -----------------------
@@ -46,13 +50,13 @@ To use the client from a strictly anonymous context (no actions on behalf of a u
 
 ```lua
 
-require("lib") 
---this is only like this because I kept the testing app inside the repo, this will be fixed
+require("imgurlua") 
+--this is assuming you downloaded this repo into a folder called imgurlua
 
 client_id = 'YOUR CLIENT ID'
 client_secret = 'YOUR CLIENT SECRET'
 
-client = ImgurClient(client_id, client_secret)
+client = ImgurClient:new(client_id, client_secret)
 
 -- Example request
 items = client:gallery()
@@ -61,6 +65,8 @@ for _,item in pairs(items) do
 end
 
 ```
+
+See also: [imgurlua-example](https://github.com/EntranceJew/imgurlua-example)
 
 ### Error Handling
 Anything that was explicitly handled by imgurpython is asserted in imgurlua, 

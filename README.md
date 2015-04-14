@@ -50,13 +50,13 @@ To use the client from a strictly anonymous context (no actions on behalf of a u
 
 ```lua
 
-require("lib") 
---this is only like this because I kept the testing app inside the repo, this will be fixed
+require("imgurlua") 
+--this is assuming you downloaded this repo into a folder called imgurlua
 
 client_id = 'YOUR CLIENT ID'
 client_secret = 'YOUR CLIENT SECRET'
 
-client = ImgurClient(client_id, client_secret)
+client = ImgurClient:new(client_id, client_secret)
 
 -- Example request
 items = client:gallery()
@@ -65,6 +65,8 @@ for _,item in pairs(items) do
 end
 
 ```
+
+See also: [imgurlua-example](https://github.com/EntranceJew/imgurlua-example)
 
 ### Error Handling
 Anything that was explicitly handled by imgurpython is asserted in imgurlua, 

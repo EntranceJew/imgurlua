@@ -1,4 +1,7 @@
-Conversation = class("Conversation")
+local path = string.sub(..., 1, string.len(...) - string.len(".conversation"))
+local Message = require(path .. ".message")
+
+local Conversation = class("Conversation")
 
 function Conversation:init(conversation_id, last_message_preview, datetime, with_account_id, with_account,
 		message_count, messages, done, page)
@@ -31,3 +34,5 @@ function Conversation:init(conversation_id, last_message_preview, datetime, with
 		self.messages = nil
 	end
 end
+
+return Conversation

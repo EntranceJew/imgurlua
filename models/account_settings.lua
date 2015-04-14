@@ -1,4 +1,4 @@
-AccountSettings = class("AccountSettings")
+local AccountSettings = class("AccountSettings")
 
 function AccountSettings:init(email, high_quality, public_images, album_privacy, pro_expiration, accepted_gallery_terms, active_emails, messaging_enabled, blocked_users)
 	self.email = email
@@ -11,3 +11,5 @@ function AccountSettings:init(email, high_quality, public_images, album_privacy,
 	self.messaging_enabled = messaging_enabled
 	self.blocked_users = blocked_users
 end
+
+return AccountSettings

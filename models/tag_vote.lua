@@ -1,4 +1,4 @@
-TagVote = class("TagVote")
+local TagVote = class("TagVote")
 
 function TagVote:init(ups, downs, name, author)
 	self.ups = ups
@@ -6,3 +6,5 @@ function TagVote:init(ups, downs, name, author)
 	self.name = name
 	self.author = author
 end
+
+return TagVote

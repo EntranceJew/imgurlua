@@ -4,51 +4,26 @@ local imgurlua = {}
 -- internal helpers
 require(path .. ".vendor.strap")
 
--- to-be-phased-out helpers
-lume = require(path .. ".vendor.lume")
+-- a class system to keep ourselves sane
 class = require(path .. ".vendor.middleclass")
-JSON = require(path .. ".vendor.JSON")
 
--- built-in requires
-mime = require("mime")
-ltn12 = require("ltn12")
+imgurlua.Account =          require(path .. ".models.account")
+imgurlua.AccountSettings =  require(path .. ".models.account_settings")
+imgurlua.Album =            require(path .. ".models.album")
+imgurlua.Comment =          require(path .. ".models.comment")
+imgurlua.Conversation =     require(path .. ".models.conversation")
+imgurlua.CustomGallery =    require(path .. ".models.custom_gallery")
+imgurlua.GalleryAlbum =     require(path .. ".models.gallery_album")
+imgurlua.GalleryImage =     require(path .. ".models.gallery_image")
+imgurlua.Image =            require(path .. ".models.image")
+imgurlua.Message =          require(path .. ".models.message")
+imgurlua.Notification =     require(path .. ".models.notification")
+imgurlua.Tag =              require(path .. ".models.tag")
+imgurlua.TagVote =          require(path .. ".models.tag_vote")
 
--- ssl related things
-request = require(path .. ".vendor.luajit-request.luajit-request")
+imgurlua.Format =           require(path .. ".helpers.format")
 
--- love handler for convenience
-ioreader = function(path)
-	return love.filesystem.read(path)
-end
-
---[[ pure lua implementation
-ioreader = function(path)
-	local fd = io.open(path, 'rb')
-	local content = fd:read("*all")
-	fd:close()
-	return content
-end
-]]
-
-API_URL = 'https://api.imgur.com/'
-
-require(path .. ".models.account")
-require(path .. ".models.account_settings")
-require(path .. ".models.album")
-require(path .. ".models.comment")
-require(path .. ".models.conversation")
-require(path .. ".models.custom_gallery")
-require(path .. ".models.gallery_album")
-require(path .. ".models.gallery_image")
-require(path .. ".models.image")
-require(path .. ".models.message")
-require(path .. ".models.notification")
-require(path .. ".models.tag")
-require(path .. ".models.tag_vote")
-
-require(path .. ".helpers.format")
-
-imgurlua.authwrapper = require(path .. ".authwrapper")
-imgurlua.imgurclient = require(path .. ".imgurclient")
+imgurlua.AuthWrapper = require(path .. ".authwrapper")
+imgurlua.ImgurClient = require(path .. ".imgurclient")
 
 return imgurlua

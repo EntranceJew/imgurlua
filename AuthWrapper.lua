@@ -1,4 +1,4 @@
-AuthWrapper = class("AuthWrapper")
+local AuthWrapper = class("AuthWrapper")
 
 function AuthWrapper:init(access_token, refresh_token, client_id, client_secret)
 	self.current_access_token = access_token
@@ -45,3 +45,4 @@ function AuthWrapper:refresh()
 	self.current_access_token = json['access_token']
 end
 
+return AuthWrapper

@@ -1,4 +1,8 @@
-Tag = class("Tag")
+local path = string.sub(..., 1, string.len(...) - string.len(".tag"))
+local GalleryAlbum = require(path .. ".gallery_album")
+local GalleryImage = require(path .. ".gallery_image")
+
+local Tag = class("Tag")
 
 function Tag:init(name, followers, total_items, following, items)
 	self.name = name
@@ -16,3 +20,5 @@ function Tag:init(name, followers, total_items, following, items)
 		self.items = nil
 	end
 end
+
+return Tag

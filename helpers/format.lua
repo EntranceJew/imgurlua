@@ -1,4 +1,10 @@
-function build_comment_tree(children)
+local path = string.sub(..., 1, string.len(...) - string.len(".helpers.format"))
+local Comment = require(path .. ".models.comment")
+local Notification = require(path .. ".models.notification")
+local GalleryAlbum = require(path .. ".models.gallery_album")
+local GalleryImage = require(path .. ".models.gallery_image")
+
+local function build_comment_tree(children)
 	local children_objects = {}
 	for child in pairs(children) do
 		local to_insert = Comment(child)
@@ -9,7 +15,7 @@ function build_comment_tree(children)
 	return children_objects
 end
 
-function format_comment_tree(response)
+local function format_comment_tree(response)
 	local result = {}
 	if type(response)=='table' then
 		for comment in pairs(response) do
@@ -25,7 +31,7 @@ function format_comment_tree(response)
 	return result
 end
 
-function build_gallery_images_and_albums(response)
+local function build_gallery_images_and_albums(response)
 	print_r(response)
 	local result = {}
 	if type(response)=='table' then
@@ -47,7 +53,7 @@ function build_gallery_images_and_albums(response)
 	return result
 end
 
-function build_notifications(response)
+local function build_notifications(response)
 	local result = {
 			replies = {},
 			messages = {}
@@ -75,7 +81,7 @@ function build_notifications(response)
 	return result
 end
 
-function build_notification(item)
+local function build_notification(item)
 	local notification = Notification(
 		item['id'],
 		item['account_id'],
@@ -89,3 +95,13 @@ function build_notification(item)
 
 	return notification
 end
+
+local Format = {
+	build_comment_tree = build_comment_tree,
+	format_comment_tree = format_comment_tree,
+	build_gallery_images_and_albums = build_gallery_images_and_albums,
+	build_notifications = build_notifications,
+	build_notification = build_notification,
+}
+
+return Format

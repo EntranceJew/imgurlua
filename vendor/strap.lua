@@ -6,14 +6,6 @@ end
 getmetatable("").__mod = interp
 -- refer to: https://docs.python.org/2/library/stdtypes.html#string-formatting if confused
 
-function bool_to_string(i)
-	if i then
-		return "true"
-	else
-		return "false"
-	end
-end
-
 function print_r ( t )  
 	local print_r_cache={}
 	local function sub_print_r(t,indent)

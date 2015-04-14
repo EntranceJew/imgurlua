@@ -1,4 +1,4 @@
-Message = class("Message")
+local Message = class("Message")
 
 function Message:init(message_id, from_user, account_id, sender_id, body, conversation_id, datetime)
 	self.id = message_id
@@ -9,3 +9,5 @@ function Message:init(message_id, from_user, account_id, sender_id, body, conver
 	self.conversation_id = conversation_id
 	self.datetime = datetime
 end
+
+return Message

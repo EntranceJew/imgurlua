@@ -1,4 +1,4 @@
-Notification = class("Notification")
+local Notification = class("Notification")
 
 function Notification:init(notification_id, account_id, viewed, content)
 	self.id = notification_id
@@ -6,3 +6,5 @@ function Notification:init(notification_id, account_id, viewed, content)
 	self.viewed = viewed
 	self.content = content
 end
+
+return Notification

@@ -1,4 +1,4 @@
-Account = class("Account")
+local Account = class("Account")
 
 function Account:init(account_id, url, bio, reputation, created, pro_expiration)
 	self.account_id = account_id
@@ -8,3 +8,5 @@ function Account:init(account_id, url, bio, reputation, created, pro_expiration)
 	self.created = created
 	self.pro_expiration = pro_expiration
 end
+
+return Account

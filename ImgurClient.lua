@@ -1,4 +1,50 @@
-ImgurClient = class('ImgurClient')
+local path = string.sub(..., 1, string.len(...) - string.len(".imgurclient"))
+
+local ImgurClient = class('ImgurClient')
+
+-- helpers
+local Format = require(path .. ".helpers.format")
+local AuthWrapper = require(path .. ".authwrapper")
+
+-- models
+local Account = require(path .. ".models.account")
+local AccountSettings = require(path .. ".models.account_settings")
+local Album = require(path .. ".models.album")
+local Comment = require(path .. ".models.comment")
+local Conversation = require(path .. ".models.conversation")
+local CustomGallery = require(path .. ".models.custom_gallery")
+local Image = require(path .. ".models.image")
+local Tag = require(path .. ".models.tag")
+local TagVote = require(path .. ".models.tag_vote")
+
+-- vendor/dependencies
+local mime = require("mime")
+local request = require(path .. ".vendor.luajit-request.luajit-request")
+local JSON = require(path .. ".vendor.JSON")
+local lume = require(path .. ".vendor.lume")
+
+local API_URL = 'https://api.imgur.com/'
+
+local ioreader = function(path)
+	return love.filesystem.read(path)
+end
+
+--[[ (bad) pure lua implementation:
+ioreader = function(path)
+	local fd = io.open(path, 'rb')
+	local content = fd:read("*all")
+	fd:close()
+	return content
+end
+]]
+
+local function bool_to_string(i)
+	if i then
+		return "true"
+	else
+		return "false"
+	end
+end
 
 function ImgurClient:init(client_id, client_secret, access_token, refresh_token)
 	assert(client_id ~= nil, "Client ID cannot be nil.")
@@ -206,14 +252,14 @@ function ImgurClient:get_gallery_favorites(username)
 	self:validate_user_context(username)
 	local gallery_favorites = self:make_request('GET', string.format('account/%s/gallery_favorites', username))
 
-	return build_gallery_images_and_albums(gallery_favorites)
+	return Format.build_gallery_images_and_albums(gallery_favorites)
 end
 
 function ImgurClient:get_account_favorites(username)
 	self:validate_user_context(username)
 	local favorites = self:make_request('GET', string.format('account/%s/favorites', username))
 
-	return build_gallery_images_and_albums(favorites)
+	return Format.build_gallery_images_and_albums(favorites)
 end
 
 function ImgurClient:get_account_submissions(username, page)
@@ -221,7 +267,7 @@ function ImgurClient:get_account_submissions(username, page)
 	self:validate_user_context(username)
 	local submissions = self:make_request('GET', string.format('account/%s/submissions/%d', username, page))
 
-	return build_gallery_images_and_albums(submissions)
+	return Format.build_gallery_images_and_albums(submissions)
 end
 
 function ImgurClient:get_account_settings(username)
@@ -424,7 +470,7 @@ end
 
 function ImgurClient:get_comment_replies(comment_id)
 	local replies = self:make_request('GET', string.format('comment/%d/replies', comment_id))
-	return format_comment_tree(replies)
+	return Format.format_comment_tree(replies)
 end
 
 function ImgurClient:post_comment_reply(comment_id, image_id, comment)
@@ -528,6 +574,7 @@ end
 function ImgurClient:custom_gallery_add_tags(gallery_id, tags)
 	self:logged_in()
 
+	local data
 	if tags then
 		data = {tags = table.concat(tags, ',')}
 	else
@@ -540,6 +587,7 @@ end
 function ImgurClient:custom_gallery_remove_tags(gallery_id, tags)
 	self:logged_in()
 
+	local data
 	if tags then
 		data = {tags = table.concat(tags, ',')}
 	else
@@ -587,7 +635,7 @@ function ImgurClient:gallery(section, sort, page, window, show_viral)
 		)
 	end
 
-	return build_gallery_images_and_albums(response)
+	return Format.build_gallery_images_and_albums(response)
 end
 
 function ImgurClient:memes_subgallery(sort, page, window)
@@ -602,12 +650,12 @@ function ImgurClient:memes_subgallery(sort, page, window)
 		response = self:make_request('GET', string.format('g/memes/%s/%d', sort, page))
 	end
 
-	return build_gallery_images_and_albums(response)
+	return Format.build_gallery_images_and_albums(response)
 end
 
 function ImgurClient:memes_subgallery_image(item_id)
 	local item = self:make_request('GET', string.format('g/memes/%s', item_id))
-	return build_gallery_images_and_albums(item)
+	return Format.build_gallery_images_and_albums(item)
 end
 
 function ImgurClient:subreddit_gallery(subreddit, sort, window, page)
@@ -622,12 +670,12 @@ function ImgurClient:subreddit_gallery(subreddit, sort, window, page)
 		response = self:make_request('GET', string.format('gallery/r/%s/%s/%d', subreddit, sort, page))
 	end
 
-	return build_gallery_images_and_albums(response)
+	return Format.build_gallery_images_and_albums(response)
 end
 
 function ImgurClient:subreddit_image(subreddit, image_id)
 	local item = self:make_request('GET', string.format('gallery/r/%s/%s', subreddit, image_id))
-	return build_gallery_images_and_albums(item)
+	return Format.build_gallery_images_and_albums(item)
 end
 
 function ImgurClient:gallery_tag(tag, sort, page, window)
@@ -653,7 +701,7 @@ end
 
 function ImgurClient:gallery_tag_image(tag, item_id)
 	local item = self:make_request('GET', string.format('gallery/t/%s/%s', tag, item_id))
-	return build_gallery_images_and_albums(item)
+	return Format.build_gallery_images_and_albums(item)
 end
 
 function ImgurClient:gallery_item_tags(item_id)
@@ -696,13 +744,13 @@ function ImgurClient:gallery_search(q, advanced, sort, window, page)
 	end
 
 	local response = self:make_request('GET', string.format('gallery/search/%s/%s/%s', sort, window, page), data)
-	return build_gallery_images_and_albums(response)
+	return Format.build_gallery_images_and_albums(response)
 end
 
 function ImgurClient:gallery_random(page)
 	page = page or 0
 	local response = self.make_request('GET', string.format('gallery/random/random/%d', page))
-	return build_gallery_images_and_albums(response)
+	return Format.build_gallery_images_and_albums(response)
 end
 
 function ImgurClient:share_on_imgur(item_id, title, terms)
@@ -723,7 +771,7 @@ end
 
 function ImgurClient:gallery_item(item_id)
 	local response = self.make_request('GET', string.format('gallery/%s', item_id))
-	return build_gallery_images_and_albums(response)
+	return Format.build_gallery_images_and_albums(response)
 end
 
 function ImgurClient:report_gallery_item(item_id)
@@ -740,7 +788,7 @@ end
 function ImgurClient:gallery_item_comments(item_id, sort)
 	sort = sort or 'best'
 	local response = self:make_request('GET', string.format('gallery/%s/comments/%s', item_id, sort))
-	return format_comment_tree(response)
+	return Format.format_comment_tree(response)
 end
 
 function ImgurClient:gallery_comment(item_id, comment)
@@ -882,13 +930,13 @@ function ImgurClient:get_notifications(new)
 	new = new or (new == nil)
 	self:logged_in()
 	local response = self:make_request('GET', 'notification', {new = string.lower(new)})
-	return build_notifications(response)
+	return Format.build_notifications(response)
 end
 
 function ImgurClient:get_notification(notification_id)
 	self:logged_in()
 	local response = self:make_request('GET', string.format('notification/%d', notification_id))
-	return build_notification(response)
+	return Format.build_notification(response)
 end
 
 function ImgurClient:mark_notifications_as_read(notification_ids)
@@ -905,3 +953,5 @@ function ImgurClient:default_memes()
 	end
 	return ret
 end
+
+return ImgurClient
